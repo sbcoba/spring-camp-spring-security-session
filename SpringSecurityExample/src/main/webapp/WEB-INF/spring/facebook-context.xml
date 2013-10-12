@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:oauth="http://www.springframework.org/schema/security/oauth2"
+	xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+    					http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
+                        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+                        http://www.springframework.org/schema/security/oauth2 http://www.springframework.org/schema/security/spring-security-oauth2-1.0.xsd
+                        ">
+    <!-- Facebook OAuth 2.0 정보 -->                   	
+	<util:properties id="facebookProp">
+		<prop key="facebook.user-authorization-uri">https://www.facebook.com/dialog/oauth</prop>
+		<prop key="facebook.access-token-uri">https://graph.facebook.com/oauth/access_token</prop>
+		<prop key="facebook.client-id">259029247575988</prop>
+		<prop key="facebook.client-secret">21ddd987ade4a61411e7a3863e0ebe8f</prop>
+		<prop key="facebook.profile-uri">https://graph.facebook.com/me</prop>
+	</util:properties>
+	
+	<!-- Facebook OAuth 2.0 Client Setup -->
+	<oauth:resource id="facebook" type="authorization_code"
+		client-id="#{facebookProp['facebook.client-id']}" 
+		client-secret="#{facebookProp['facebook.client-secret']}"
+		access-token-uri="#{facebookProp['facebook.access-token-uri']}"
+		user-authorization-uri="#{facebookProp['facebook.user-authorization-uri']}"
+		authentication-scheme="query" 
+		token-name="oauth_token" 
+		pre-established-redirect-uri="/"
+		client-authentication-scheme="form" />
+
+	<!-- Facebook 서버에 접속하기 위한 RestTemplate -->	
+	<oauth:rest-template resource="facebook" id="facebookRestTemplate" />
+	
+	<!-- OAuth 2.0 Client를 연동 시키기 위한 Filter 생성 -->
+	<oauth:client id="oauth2ClientFilter" />
+	
+	<!-- Facebook 에서 데이터를 가져 오기 위한 Service -->
+	<bean id="facebookService" class="org.springcamp.security.facebook.FacebookServiceImpl">
+		<property name="facebookRestTemplate" ref="facebookRestTemplate" />
+		<property name="profileUri" value="#{facebookProp['facebook.profile-uri']}" />
+	</bean>
+	    
+	<bean id="facebookAuthenticationFilter" class="org.springcamp.security.facebook.FacebookAuthenticationFilter">
+		<property name="authenticationManager" ref="authenticationManager"/>
+	</bean>
+	
+	<bean id="facebookAuthenticationProvider" class="org.springcamp.security.facebook.FacebookAuthenticationProvider">
+		<property name="facebookService" ref="facebookService"/>
+	</bean>   
+</beans>
